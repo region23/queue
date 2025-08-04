@@ -1,2 +1,4 @@
 .env
 .DS_Store
+telegram_queue_bot
+queue_bot

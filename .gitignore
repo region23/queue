@@ -1,4 +1,39 @@
-.env
-.DS_Store
-telegram_queue_bot
+# Binaries
 queue_bot
+telegram_queue_bot
+
+# Database
+queue.db
+
+# Logs
+ngrok.log
+*.log
+
+# Environment variables
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work

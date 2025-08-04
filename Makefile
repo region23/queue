@@ -1,16 +1,17 @@
-.PHONY: help build run ngrok webhook clean dev stop
+.PHONY: help build run ngrok webhook clean dev stop delete-webhook
 
 # Default target
 help:
 	@echo "Available commands:"
-	@echo "  build     - Build the bot binary"
-	@echo "  run       - Run the bot with environment variables"
-	@echo "  ngrok     - Start ngrok tunnel"
-	@echo "  webhook   - Set webhook URL"
-	@echo "  dev       - Start development environment (ngrok + bot)"
-	@echo "  stop      - Stop all running processes (ngrok, bot)"
-	@echo "  clean     - Clean build artifacts"
-	@echo "  env       - Show environment variables"
+	@echo "  build          - Build the bot binary"
+	@echo "  run            - Run the bot with environment variables"
+	@echo "  ngrok          - Start ngrok tunnel"
+	@echo "  webhook        - Set webhook URL"
+	@echo "  delete-webhook - Remove webhook from Telegram"
+	@echo "  dev            - Start development environment (ngrok + bot)"
+	@echo "  stop           - Stop all running processes (ngrok, bot)"
+	@echo "  clean          - Clean build artifacts"
+	@echo "  env            - Show environment variables"
 
 # Build the bot
 build:
@@ -29,6 +30,10 @@ webhook:
 	./load_env.sh bash -c 'curl -X POST "https://api.telegram.org/bot$$TELEGRAM_TOKEN/setWebhook" \
 		-H "Content-Type: application/json" \
 		-d "{\"url\": \"$$WEBHOOK_URL\"}" && echo ""'
+
+# Remove webhook from Telegram
+delete-webhook:
+	./load_env.sh bash -c 'curl -X POST "https://api.telegram.org/bot$$TELEGRAM_TOKEN/deleteWebhook" && echo ""'
 
 # Development mode: start ngrok in background and run bot
 dev: build
@@ -50,6 +55,13 @@ dev: build
 # Clean build artifacts
 clean:
 	rm -f queue_bot ngrok.log queue.db
+
+# Stop all running processes
+stop:
+	@echo "Stopping all processes..."
+	@pkill -f "ngrok http" || true
+	@pkill -f "queue_bot" || true
+	@echo "All processes stopped"
 
 # Show environment variables
 env:

@@ -5,11 +5,13 @@
 ## Настройка
 
 1. Скопируйте `.env.example` в `.env` и заполните переменные:
+
    ```bash
    cp .env.example .env
    ```
 
 2. Установите ngrok (если не установлен):
+
    ```bash
    # macOS
    brew install ngrok
@@ -22,7 +24,7 @@
 
 ## Использование
 
-### Доступные команды Makefile:
+### Доступные команды Makefile
 
 - `make help` - Показать справку по командам
 - `make build` - Собрать бота
@@ -33,29 +35,32 @@
 - `make clean` - Очистить артефакты сборки
 - `make env` - Показать переменные окружения
 
-### Быстрый старт для разработки:
+### Быстрый старт для разработки
 
 1. Запустить ngrok в отдельном терминале:
+
    ```bash
    make ngrok
    ```
 
 2. В другом терминале запустить бота:
+
    ```bash
    make run
    ```
 
 3. Или запустить все одной командой:
+
    ```bash
    make dev
    ```
 
-### Переменные окружения (.env):
+### Переменные окружения (.env)
 
 - `TELEGRAM_TOKEN` - Токен бота от BotFather
-- `WEBHOOK_URL` - URL для webhook (https://frankly-wanted-polliwog.ngrok-free.app/webhook)
+- `WEBHOOK_URL` - URL для webhook (<https://frankly-wanted-polliwog.ngrok-free.app/webhook>)
 - `WORK_START` - Начало рабочего дня (формат HH:MM)
-- `WORK_END` - Конец рабочего дня (формат HH:MM) 
+- `WORK_END` - Конец рабочего дня (формат HH:MM)
 - `SLOT_DURATION` - Длительность слота в минутах
 - `SCHEDULE_DAYS` - Количество дней для планирования
 - `DB_FILE` - Путь к файлу базы данных SQLite

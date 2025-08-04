@@ -1,6 +1,6 @@
 # Simple Makefile for Telegram Queue Bot
 
-.PHONY: build run test clean docker-build docker-run
+.PHONY: build run test clean clean-db docker-build docker-run ngrok
 
 # Build the application
 build:
@@ -17,6 +17,9 @@ test:
 # Clean build artifacts
 clean:
 	rm -rf bin/
+
+clean-db:
+	rm -rf queue.db
 
 # Docker commands
 docker-build:
@@ -37,3 +40,7 @@ fmt:
 
 lint:
 	golangci-lint run
+
+# Start ngrok tunnel
+ngrok:
+	ngrok http --domain=frankly-wanted-polliwog.ngrok-free.app 8080

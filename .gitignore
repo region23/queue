@@ -1,46 +1,24 @@
 # Binaries
-queue_bot
-github.com/region23/queue
-queue_bot_new
+bin/
+bot
+*.exe
 
 # Database
-queue.db
-queue.db-shm
-queue.db-wal
 *.db
-*.db-shm
-*.db-wal
+*.db-journal
 
-
-# Logs
-ngrok.log
-*.log
-
-# Environment variables
+# Environment
 .env
 
-# IDE files
-.vscode/
+# Data directory
+data/
+
+# IDE
 .idea/
-*.swp
-*.swo
+.vscode/
 
-# OS files
+# OS
 .DS_Store
-Thumbs.db
 
-# Go build artifacts
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary, build with `go test -c`
-*.test
-
-# Output of the go coverage tool
-*.out
-
-# Go workspace file
-go.work
+# Go
+go.sum

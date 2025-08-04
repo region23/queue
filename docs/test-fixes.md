@@ -12,7 +12,7 @@ internal/bot/dispatcher.go:22:29: undefined: Service
 
 **Решение:**
 
-- Добавлен правильный импорт: `"telegram_queue_bot/internal/bot/service"`
+- Добавлен правильный импорт: `"github.com/region23/queue/internal/bot/service"`
 - Изменен тип параметра: `*Service` → `*service.Service`
 
 ### 2. Дублирующиеся тесты ✅

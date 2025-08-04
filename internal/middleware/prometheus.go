@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"telegram_queue_bot/pkg/metrics"
+	"github.com/region23/queue/pkg/metrics"
 )
 
 // PrometheusMiddleware добавляет метрики Prometheus для HTTP запросов

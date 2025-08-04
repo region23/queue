@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"time"
 
-	"telegram_queue_bot/internal/storage"
-	"telegram_queue_bot/pkg/metrics"
+	"github.com/region23/queue/internal/storage"
+	"github.com/region23/queue/pkg/metrics"
 )
 
 // HealthResponse представляет ответ health check

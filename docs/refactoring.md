@@ -43,7 +43,7 @@ git commit -m "backup: current working state before refactoring"
 ### Шаг 1.3: Создание новой структуры проекта
 
 ```
-telegram_queue_bot/
+github.com/region23/queue/
 ├── cmd/
 │   └── server/
 │       └── main.go           # Точка входа
@@ -281,7 +281,7 @@ import (
     "fmt"
     "time"
     
-    "telegram_queue_bot/internal/storage/models"
+    "github.com/region23/queue/internal/storage/models"
     _ "modernc.org/sqlite"
 )
 
@@ -355,7 +355,7 @@ package scheduler
 
 import (
     "context"
-    "telegram_queue_bot/internal/storage/models"
+    "github.com/region23/queue/internal/storage/models"
 )
 
 type NotificationScheduler interface {
@@ -518,7 +518,7 @@ import (
     "context"
     "database/sql"
     "testing"
-    "telegram_queue_bot/internal/storage/sqlite"
+    "github.com/region23/queue/internal/storage/sqlite"
 )
 
 func SetupTestDB(t *testing.T) *sqlite.SQLiteStorage {
@@ -547,7 +547,7 @@ package unit
 import (
     "context"
     "testing"
-    "telegram_queue_bot/tests/testutils"
+    "github.com/region23/queue/tests/testutils"
 )
 
 func TestUserRepository_SaveUser(t *testing.T) {
@@ -581,9 +581,9 @@ package bot
 
 import (
     "context"
-    "telegram_queue_bot/internal/config"
-    "telegram_queue_bot/internal/storage"
-    "telegram_queue_bot/internal/scheduler"
+    "github.com/region23/queue/internal/config"
+    "github.com/region23/queue/internal/storage"
+    "github.com/region23/queue/internal/scheduler"
     
     "github.com/go-telegram/bot"
 )
@@ -672,10 +672,10 @@ import (
     "os/signal"
     "syscall"
     
-    "telegram_queue_bot/internal/config"
-    "telegram_queue_bot/internal/storage/sqlite"
-    "telegram_queue_bot/internal/bot"
-    "telegram_queue_bot/internal/server"
+    "github.com/region23/queue/internal/config"
+    "github.com/region23/queue/internal/storage/sqlite"
+    "github.com/region23/queue/internal/bot"
+    "github.com/region23/queue/internal/server"
 )
 
 func main() {

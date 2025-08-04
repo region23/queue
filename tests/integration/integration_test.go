@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"telegram_queue_bot/internal/config"
-	"telegram_queue_bot/internal/storage/models"
-	"telegram_queue_bot/internal/storage/sqlite"
-	"telegram_queue_bot/tests/testutils"
+	"github.com/region23/queue/internal/config"
+	"github.com/region23/queue/internal/storage/models"
+	"github.com/region23/queue/internal/storage/sqlite"
+	"github.com/region23/queue/tests/testutils"
 )
 
 // TestStorageSchedulerIntegration тестирует интеграцию хранилища и планировщика

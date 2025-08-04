@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"telegram_queue_bot/internal/config"
-	"telegram_queue_bot/tests/testutils"
+	"github.com/region23/queue/internal/config"
+	"github.com/region23/queue/tests/testutils"
 )
 
 func TestConfig_Load(t *testing.T) {

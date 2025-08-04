@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"telegram_queue_bot/internal/storage/models"
 	"time"
+
+	"github.com/region23/queue/internal/storage/models"
 
 	_ "modernc.org/sqlite"
 )

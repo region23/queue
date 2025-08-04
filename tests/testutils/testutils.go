@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"telegram_queue_bot/internal/config"
-	"telegram_queue_bot/internal/scheduler/memory"
-	"telegram_queue_bot/internal/server"
-	"telegram_queue_bot/internal/storage/models"
-	"telegram_queue_bot/internal/storage/sqlite"
-	"telegram_queue_bot/pkg/logger"
+	"github.com/region23/queue/internal/config"
+	"github.com/region23/queue/internal/scheduler/memory"
+	"github.com/region23/queue/internal/server"
+	"github.com/region23/queue/internal/storage/models"
+	"github.com/region23/queue/internal/storage/sqlite"
+	"github.com/region23/queue/pkg/logger"
 )
 
 // SetupTestDB создает in-memory SQLite базу данных для тестов

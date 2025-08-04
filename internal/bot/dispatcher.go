@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"telegram_queue_bot/internal/bot/handlers"
-	"telegram_queue_bot/internal/bot/service"
+	"github.com/region23/queue/internal/bot/handlers"
+	"github.com/region23/queue/internal/bot/service"
 
 	tgbot "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"

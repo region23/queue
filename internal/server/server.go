@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"telegram_queue_bot/internal/bot/dispatcher"
-	"telegram_queue_bot/internal/config"
-	"telegram_queue_bot/internal/middleware"
-	"telegram_queue_bot/pkg/logger"
+	"github.com/region23/queue/internal/bot/dispatcher"
+	"github.com/region23/queue/internal/config"
+	"github.com/region23/queue/internal/middleware"
+	"github.com/region23/queue/pkg/logger"
 
 	tgbot "github.com/go-telegram/bot"
 	tgmodels "github.com/go-telegram/bot/models"

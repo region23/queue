@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"telegram_queue_bot/pkg/errors"
+	"github.com/region23/queue/pkg/errors"
 )
 
 // Регулярные выражения для валидации

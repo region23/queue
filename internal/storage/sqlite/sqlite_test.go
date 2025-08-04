@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"telegram_queue_bot/internal/storage/models"
+	"github.com/region23/queue/internal/storage/models"
 )
 
 func TestGetAvailableSlots_TimeFiltering(t *testing.T) {

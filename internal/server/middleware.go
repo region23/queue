@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"telegram_queue_bot/pkg/logger"
+	"github.com/region23/queue/pkg/logger"
 )
 
 // loggingMiddleware логирует HTTP запросы

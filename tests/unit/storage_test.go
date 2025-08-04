@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"telegram_queue_bot/internal/storage/models"
-	"telegram_queue_bot/tests/testutils"
+	"github.com/region23/queue/internal/storage/models"
+	"github.com/region23/queue/tests/testutils"
 )
 
 func TestUserRepository_SaveUser(t *testing.T) {

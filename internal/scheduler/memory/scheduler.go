@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"telegram_queue_bot/internal/scheduler"
-	"telegram_queue_bot/internal/storage/models"
 	"time"
+
+	"github.com/region23/queue/internal/scheduler"
+	"github.com/region23/queue/internal/storage/models"
 )
 
 // MemoryScheduler реализует планировщик уведомлений в памяти

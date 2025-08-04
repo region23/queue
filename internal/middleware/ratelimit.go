@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"telegram_queue_bot/pkg/logger"
+	"github.com/region23/queue/pkg/logger"
 )
 
 // TokenBucket реализует алгоритм Token Bucket для rate limiting

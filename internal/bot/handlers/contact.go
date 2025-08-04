@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	botservice "telegram_queue_bot/internal/bot/service"
+	botservice "github.com/region23/queue/internal/bot/service"
 
 	tgbot "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"

@@ -85,7 +85,7 @@
 ## Структура проекта
 
 ```text
-telegram_queue_bot/
+github.com/region23/queue/
 ├── cmd/
 │   └── server/
 │       └── main.go           # Точка входа приложения

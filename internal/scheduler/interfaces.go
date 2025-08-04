@@ -2,8 +2,9 @@ package scheduler
 
 import (
 	"context"
-	"telegram_queue_bot/internal/storage/models"
 	"time"
+
+	"github.com/region23/queue/internal/storage/models"
 )
 
 // NotificationScheduler определяет интерфейс для планирования уведомлений

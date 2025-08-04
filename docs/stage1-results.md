@@ -42,7 +42,7 @@ git commit -m "backup: current working state before refactoring"
 Создана полная структура директорий согласно плану:
 
 ```
-telegram_queue_bot/
+github.com/region23/queue/
 ├── cmd/server/                    # Точка входа
 ├── internal/
 │   ├── config/                    # Конфигурация

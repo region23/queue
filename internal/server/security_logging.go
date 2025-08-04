@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"telegram_queue_bot/pkg/logger"
+	"github.com/region23/queue/pkg/logger"
 
 	tgmodels "github.com/go-telegram/bot/models"
 )

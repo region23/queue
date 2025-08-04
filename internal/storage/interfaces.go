@@ -2,7 +2,8 @@ package storage
 
 import (
 	"context"
-	"telegram_queue_bot/internal/storage/models"
+
+	"github.com/region23/queue/internal/storage/models"
 )
 
 // UserRepository определяет интерфейс для работы с пользователями

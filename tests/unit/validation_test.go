@@ -3,8 +3,8 @@ package unit
 import (
 	"testing"
 
-	"telegram_queue_bot/internal/validation"
-	"telegram_queue_bot/pkg/errors"
+	"github.com/region23/queue/internal/validation"
+	"github.com/region23/queue/pkg/errors"
 )
 
 func TestValidateSlotID(t *testing.T) {

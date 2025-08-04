@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"telegram_queue_bot/internal/middleware"
-	"telegram_queue_bot/tests/testutils"
+	"github.com/region23/queue/internal/middleware"
+	"github.com/region23/queue/tests/testutils"
 )
 
 func TestTelegramRateLimiter(t *testing.T) {

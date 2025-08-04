@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"telegram_queue_bot/internal/config"
-	"telegram_queue_bot/internal/server"
-	"telegram_queue_bot/pkg/logger"
+	"github.com/region23/queue/internal/config"
+	"github.com/region23/queue/internal/server"
+	"github.com/region23/queue/pkg/logger"
 )
 
 func TestSecurityMiddleware(t *testing.T) {

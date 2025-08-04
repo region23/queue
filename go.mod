@@ -1,4 +1,4 @@
-module telegram_queue_bot
+module github.com/region23/queue
 
 go 1.23.0
 

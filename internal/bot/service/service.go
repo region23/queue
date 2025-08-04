@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"telegram_queue_bot/internal/config"
-	"telegram_queue_bot/internal/scheduler"
-	"telegram_queue_bot/internal/storage"
-	"telegram_queue_bot/internal/storage/models"
-	"telegram_queue_bot/pkg/errors"
+	"github.com/region23/queue/internal/config"
+	"github.com/region23/queue/internal/scheduler"
+	"github.com/region23/queue/internal/storage"
+	"github.com/region23/queue/internal/storage/models"
+	"github.com/region23/queue/pkg/errors"
 
 	"github.com/go-telegram/bot"
 	tgmodels "github.com/go-telegram/bot/models"

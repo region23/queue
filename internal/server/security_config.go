@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"telegram_queue_bot/internal/config"
+	"github.com/region23/queue/internal/config"
 )
 
 // SecurityConfig содержит настройки безопасности

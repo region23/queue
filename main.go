@@ -588,9 +588,28 @@ func handleCallbackQuery(ctx context.Context, cb *models.CallbackQuery) {
 			Text:            "Слот забронирован",
 		}
 		b.AnswerCallbackQuery(ctx, params)
+
+		// Delete the message with slot buttons
+		deleteParams := &bot.DeleteMessageParams{
+			ChatID:    chatID,
+			MessageID: cb.Message.Message.ID,
+		}
+		b.DeleteMessage(ctx, deleteParams)
+
+		// Create success message with slot details
+		var successText string
+		if err == nil {
+			// Format the slot date and time for display
+			slotDateTime := fmt.Sprintf("%s %s", slot.Date, slot.StartTime)
+			successText = fmt.Sprintf("Вы успешно забронировали слот %s. Мы уведомим вас, когда ваша очередь подойдёт.", slotDateTime)
+		} else {
+			// Fallback to original message if slot data unavailable
+			successText = "Вы успешно забронировали слот. Мы уведомим вас, когда ваша очередь подойдёт."
+		}
+
 		msgParams := &bot.SendMessageParams{
 			ChatID: chatID,
-			Text:   "Вы успешно забронировали слот. Мы уведомим вас, когда ваша очередь подойдёт.",
+			Text:   successText,
 		}
 		b.SendMessage(ctx, msgParams)
 		return

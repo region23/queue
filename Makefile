@@ -1,39 +1,51 @@
-.PHONY: help build run ngrok webhook clean dev stop delete-webhook
+.PHONY: help build run ngrok webhook clean dev stop delete-webhook env
 
 # Default target
 help:
 	@echo "Available commands:"
 	@echo "  build          - Build the bot binary"
-	@echo "  run            - Run the bot with environment variables"
+	@echo "  run            - Run the bot (loads .env automatically)"
 	@echo "  ngrok          - Start ngrok tunnel"
 	@echo "  webhook        - Set webhook URL"
 	@echo "  delete-webhook - Remove webhook from Telegram"
 	@echo "  dev            - Start development environment (ngrok + bot)"
 	@echo "  stop           - Stop all running processes (ngrok, bot)"
 	@echo "  clean          - Clean build artifacts"
-	@echo "  env            - Show environment variables"
+	@echo "  env            - Show environment variables from .env"
 
 # Build the bot
 build:
 	go build -o queue_bot .
 
-# Run the bot with environment variables
+# Run the bot (now loads .env automatically)
 run: build
-	./load_env.sh ./queue_bot
+	./queue_bot
 
 # Start ngrok tunnel
 ngrok:
 	ngrok http --domain=frankly-wanted-polliwog.ngrok-free.app 8080
 
-# Set webhook URL using the ngrok domain
+# Set webhook URL using environment variables from .env
 webhook:
-	./load_env.sh bash -c 'curl -X POST "https://api.telegram.org/bot$$TELEGRAM_TOKEN/setWebhook" \
-		-H "Content-Type: application/json" \
-		-d "{\"url\": \"$$WEBHOOK_URL\"}" && echo ""'
+	@if [ -f .env ]; then \
+		export $$(grep -v '^#' .env | xargs) && \
+		curl -X POST "https://api.telegram.org/bot$$TELEGRAM_TOKEN/setWebhook" \
+			-H "Content-Type: application/json" \
+			-d "{\"url\": \"$$WEBHOOK_URL\"}" && echo ""; \
+	else \
+		echo "Error: .env file not found"; \
+		exit 1; \
+	fi
 
 # Remove webhook from Telegram
 delete-webhook:
-	./load_env.sh bash -c 'curl -X POST "https://api.telegram.org/bot$$TELEGRAM_TOKEN/deleteWebhook" && echo ""'
+	@if [ -f .env ]; then \
+		export $$(grep -v '^#' .env | xargs) && \
+		curl -X POST "https://api.telegram.org/bot$$TELEGRAM_TOKEN/deleteWebhook" && echo ""; \
+	else \
+		echo "Error: .env file not found"; \
+		exit 1; \
+	fi
 
 # Development mode: start ngrok in background and run bot
 dev: build
@@ -43,14 +55,7 @@ dev: build
 	@echo "2. Waiting for ngrok to start..."
 	@sleep 3
 	@echo "3. Setting webhook and starting bot..."
-	@./load_env.sh bash -c '\
-		echo "Setting webhook to $$WEBHOOK_URL"; \
-		curl -s -X POST "https://api.telegram.org/bot$$TELEGRAM_TOKEN/setWebhook" \
-			-H "Content-Type: application/json" \
-			-d "{\"url\": \"$$WEBHOOK_URL\"}" > /dev/null && \
-		echo "Webhook configured successfully" && \
-		echo "Starting bot on port $$PORT..." && \
-		./queue_bot'
+	@./queue_bot
 
 # Clean build artifacts
 clean:
@@ -65,4 +70,12 @@ stop:
 
 # Show environment variables
 env:
-	@./load_env.sh bash -c 'echo "TELEGRAM_TOKEN: $${TELEGRAM_TOKEN:0:10}..."; echo "WEBHOOK_URL: $$WEBHOOK_URL"; echo "PORT: $$PORT"'
+	@if [ -f .env ]; then \
+		export $$(grep -v '^#' .env | xargs) && \
+		echo "TELEGRAM_TOKEN: $${TELEGRAM_TOKEN:0:10}..." && \
+		echo "WEBHOOK_URL: $$WEBHOOK_URL" && \
+		echo "PORT: $$PORT"; \
+	else \
+		echo "Error: .env file not found"; \
+		exit 1; \
+	fi

@@ -6,6 +6,8 @@ toolchain go1.24.5
 
 require modernc.org/sqlite v1.38.2
 
+require github.com/joho/godotenv v1.5.1 // indirect
+
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-telegram/bot v1.16.0

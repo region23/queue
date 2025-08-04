@@ -32,6 +32,7 @@ import (
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
+	"github.com/joho/godotenv"
 )
 
 // dateFormat and dateTimeFormat define the layouts used for parsing and
@@ -57,10 +58,10 @@ var (
 // (formatted as "HH:MM") and the slot duration in minutes.  By default the
 // working day runs from 09:00 to 18:00 with 30 minute slots.
 var (
-	workStart        = getEnv("WORK_START", "09:00")
-	workEnd          = getEnv("WORK_END", "18:00")
-	slotDurationMins = getEnvAsInt("SLOT_DURATION", 30)
-	scheduleDays     = getEnvAsInt("SCHEDULE_DAYS", 7)
+	workStart        string
+	workEnd          string
+	slotDurationMins int
+	scheduleDays     int
 )
 
 // getEnv reads an environment variable and returns its value or a fallback.
@@ -138,6 +139,35 @@ func saveUser(chatID int64, phone, firstName, lastName string) error {
 	return err
 }
 
+// isUserRegistered checks if a user exists in the users table.
+func isUserRegistered(chatID int64) bool {
+	var count int
+	err := db.QueryRow(`SELECT COUNT(*) FROM users WHERE chat_id = ?`, chatID).Scan(&count)
+	if err != nil {
+		log.Println("failed to check user registration:", err)
+		return false
+	}
+	return count > 0
+}
+
+// getUserTodaySlot returns the user's booked slot for today, if any.
+func getUserTodaySlot(chatID int64) (Slot, bool) {
+	today := time.Now().Format(dateFormat)
+	var s Slot
+	var notifiedInt int
+	err := db.QueryRow(`SELECT id, date, start_time, end_time, user_chat_id, notified FROM slots WHERE date = ? AND user_chat_id = ?`, today, chatID).
+		Scan(&s.ID, &s.Date, &s.StartTime, &s.EndTime, &s.UserChatID, &notifiedInt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return s, false
+		}
+		log.Println("failed to get user's today slot:", err)
+		return s, false
+	}
+	s.Notified = notifiedInt != 0
+	return s, true
+}
+
 // generateSlotsForDate populates the slots table with all possible time slots for
 // a given date.  It computes intervals starting at workStart and ending at
 // workEnd, each of length slotDurationMins.  Slots already in the table are
@@ -178,7 +208,7 @@ func listAvailableDates(days int) []string {
 }
 
 // getAvailableSlots returns all unreserved slots for the given date sorted by
-// start_time.
+// start_time. For today's date, only returns slots that haven't started yet.
 func getAvailableSlots(date string) ([]Slot, error) {
 	rows, err := db.Query(`SELECT id, start_time, end_time FROM slots WHERE date = ? AND user_chat_id IS NULL ORDER BY start_time`, date)
 	if err != nil {
@@ -186,12 +216,22 @@ func getAvailableSlots(date string) ([]Slot, error) {
 	}
 	defer rows.Close()
 	var slots []Slot
+	now := time.Now()
+	today := now.Format(dateFormat)
+	currentTime := now.Format(timeFormat)
+
 	for rows.Next() {
 		var s Slot
 		s.Date = date
 		if err := rows.Scan(&s.ID, &s.StartTime, &s.EndTime); err != nil {
 			return nil, err
 		}
+
+		// For today's date, only include slots that haven't started yet
+		if date == today && s.StartTime <= currentTime {
+			continue
+		}
+
 		slots = append(slots, s)
 	}
 	return slots, nil
@@ -227,8 +267,22 @@ func getSlotByID(id int) (Slot, error) {
 // askForContact sends a message prompting the user to share their phone number.
 // It uses a reply keyboard with the `request_contact` property so Telegram
 // clients will show a button that, when pressed, sends the user's phone
-// number.
-func askForContact(chatID int64) {
+// number. If hideKeyboard is true, sends a message without the keyboard.
+func askForContact(chatID int64, hideKeyboard bool) {
+	if hideKeyboard {
+		params := &bot.SendMessageParams{
+			ChatID: chatID,
+			Text:   "Добро пожаловать обратно!",
+			ReplyMarkup: &models.ReplyKeyboardRemove{
+				RemoveKeyboard: true,
+			},
+		}
+		if _, err := b.SendMessage(context.Background(), params); err != nil {
+			log.Println("failed to send welcome message:", err)
+		}
+		return
+	}
+
 	keyboard := &models.ReplyKeyboardMarkup{
 		Keyboard: [][]models.KeyboardButton{
 			{
@@ -257,7 +311,19 @@ func askForContact(chatID int64) {
 // Each button uses callback data prefixed with "DATE:" so the handler can
 // distinguish it from time slot selections.  Before presenting dates the
 // function ensures that the slots table contains intervals for each date.
+// If SCHEDULE_DAYS=1, skip date selection and show today's slots directly.
 func showDateSelection(chatID int64) {
+	// If only one day is configured, show today's slots directly
+	if scheduleDays == 1 {
+		today := time.Now().Format(dateFormat)
+		dt, _ := time.ParseInLocation(dateFormat, today, time.Local)
+		if err := generateSlotsForDate(dt); err != nil {
+			log.Println("failed to generate slots:", err)
+		}
+		showSlotSelection(chatID, today)
+		return
+	}
+
 	dates := listAvailableDates(scheduleDays)
 	// Pre‑populate the database with slots for each date
 	for _, d := range dates {
@@ -300,10 +366,23 @@ func showSlotSelection(chatID int64, date string) {
 		b.SendMessage(context.Background(), params)
 		return
 	}
+
+	today := time.Now().Format(dateFormat)
+	var messageText string
+	var noSlotsText string
+
+	if date == today {
+		messageText = "Выберите свободный временной слот на сегодня:"
+		noSlotsText = "На сегодня нет свободных слотов, доступных для записи."
+	} else {
+		messageText = "Выберите свободный временной слот:"
+		noSlotsText = "На выбранную дату нет свободных слотов. Попробуйте другую дату."
+	}
+
 	if len(slots) == 0 {
 		params := &bot.SendMessageParams{
 			ChatID: chatID,
-			Text:   "На выбранную дату нет свободных слотов. Попробуйте другую дату.",
+			Text:   noSlotsText,
 		}
 		b.SendMessage(context.Background(), params)
 		return
@@ -323,7 +402,7 @@ func showSlotSelection(chatID int64, date string) {
 	}
 	params := &bot.SendMessageParams{
 		ChatID:      chatID,
-		Text:        "Выберите свободный временной слот:",
+		Text:        messageText,
 		ReplyMarkup: keyboard,
 	}
 	if _, err := b.SendMessage(context.Background(), params); err != nil {
@@ -418,14 +497,37 @@ func handleUpdate(ctx context.Context, botInstance *bot.Bot, update *models.Upda
 			params := &bot.SendMessageParams{
 				ChatID: chatID,
 				Text:   "Телефон получен. Давайте запишемся.",
+				ReplyMarkup: &models.ReplyKeyboardRemove{
+					RemoveKeyboard: true,
+				},
 			}
 			b.SendMessage(ctx, params)
 			showDateSelection(chatID)
 			return
 		}
-		// On /start or unknown message, ask for contact
+		// On /start command
 		if update.Message.Text != "" && strings.HasPrefix(update.Message.Text, "/start") {
-			askForContact(chatID)
+			// Check if user is registered
+			if isUserRegistered(chatID) {
+				// User is registered, hide keyboard and check for today's slot
+				askForContact(chatID, true)
+
+				// Check if user has a slot booked for today
+				if slot, hasSlot := getUserTodaySlot(chatID); hasSlot {
+					// User has a slot for today, show it
+					params := &bot.SendMessageParams{
+						ChatID: chatID,
+						Text:   fmt.Sprintf("У вас уже забронирован слот на сегодня: %s %s-%s", slot.Date, slot.StartTime, slot.EndTime),
+					}
+					b.SendMessage(ctx, params)
+				} else {
+					// User doesn't have a slot for today, show available slots
+					showDateSelection(chatID)
+				}
+			} else {
+				// User is not registered, ask for contact
+				askForContact(chatID, false)
+			}
 			return
 		}
 		// Fallback: remind user to share contact or use /start
@@ -515,6 +617,18 @@ func webhookHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found or error loading .env file:", err)
+	}
+
+	// Initialize configuration variables after loading .env
+	workStart = getEnv("WORK_START", "09:00")
+	workEnd = getEnv("WORK_END", "18:00")
+	slotDurationMins = getEnvAsInt("SLOT_DURATION", 30)
+	scheduleDays = getEnvAsInt("SCHEDULE_DAYS", 7)
+
 	token := os.Getenv("TELEGRAM_TOKEN")
 	webhookURL := os.Getenv("WEBHOOK_URL")
 	if token == "" || webhookURL == "" {

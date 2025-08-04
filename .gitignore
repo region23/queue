@@ -4,6 +4,8 @@ telegram_queue_bot
 
 # Database
 queue.db
+queue.db-shm
+queue.db-wal
 
 # Logs
 ngrok.log

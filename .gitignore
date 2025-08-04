@@ -6,6 +6,10 @@ telegram_queue_bot
 queue.db
 queue.db-shm
 queue.db-wal
+*.db
+*.db-shm
+*.db-wal
+
 
 # Logs
 ngrok.log

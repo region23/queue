@@ -108,7 +108,7 @@ func (app *App) registerBotCommands() error {
 		},
 		{
 			Command:     "book",
-			Description: "📅 Записаться на прием",
+			Description: "📅 Записаться на приём",
 		},
 		{
 			Command:     "myslots",
@@ -172,7 +172,7 @@ func (app *App) processUpdate(update *tgbotapi.Update) error {
 		if update.Message.IsCommand() {
 			command := update.Message.Command()
 			log.Printf("Received command: '%s' from user %d", command, update.Message.From.ID)
-			
+
 			handler, exists := app.handlers[command]
 			if !exists {
 				log.Printf("Unknown command: '%s'", command)
@@ -214,12 +214,12 @@ func (app *App) handleContact(update *tgbotapi.Update) error {
 	// Remove keyboard and send success message
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(`✅ Отлично! Ваш номер телефона сохранен: %s
 
-Теперь вы можете записываться на прием:
-📅 /book - Записаться на прием
+Теперь вы можете записываться на приём:
+📅 /book - Записаться на приём
 📋 /myslots - Мои записи`, contact.PhoneNumber))
-	
+
 	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-	
+
 	_, err = app.bot.Send(msg)
 	return err
 }
@@ -307,7 +307,7 @@ func (app *App) handleSlotCallback(callback *tgbotapi.CallbackQuery, dateTimeStr
 	deleteMsg := tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID)
 	app.bot.Send(deleteMsg)
 
-	message := fmt.Sprintf("✅ Вы успешно записались на прием:\n📅 %s", slotTime.Format("02.01.2006 15:04"))
+	message := fmt.Sprintf("✅ Вы успешно записались на приём:\n📅 %s", slotTime.Format("02.01.2006 15:04"))
 	return app.sendMessage(callback.Message.Chat.ID, message)
 }
 
@@ -328,7 +328,7 @@ func (app *App) handleBookCallback(callback *tgbotapi.CallbackQuery, slotID int)
 	deleteMsg := tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID)
 	app.bot.Send(deleteMsg)
 
-	return app.sendMessage(callback.Message.Chat.ID, "✅ Вы успешно записались на прием!")
+	return app.sendMessage(callback.Message.Chat.ID, "✅ Вы успешно записались на приём!")
 }
 
 // handleCancelCallback handles slot cancellation
@@ -367,7 +367,7 @@ func (app *App) sendMessage(chatID int64, text string) error {
 
 func handleStart(app *App, update *tgbotapi.Update) error {
 	userID := update.Message.From.ID
-	
+
 	// Check if user exists
 	user, err := GetUserByTelegramID(app.db, userID)
 	if err != nil {
@@ -393,7 +393,7 @@ func handleStart(app *App, update *tgbotapi.Update) error {
 	if user.PhoneNumber == "" {
 		message := fmt.Sprintf(`Привет, %s! 👋
 
-Для записи на прием нам нужен ваш номер телефона.
+Для записи на приём нам нужен ваш номер телефона.
 
 Пожалуйста, поделитесь своим контактом, нажав кнопку ниже:`, user.FirstName)
 
@@ -418,7 +418,7 @@ func handleStart(app *App, update *tgbotapi.Update) error {
 Телефон: %s
 
 Доступные команды:
-📅 /book - Записаться на прием
+📅 /book - Записаться на приём
 📋 /myslots - Мои записи  
 ❌ /cancel - Отменить запись
 ❓ /help - Справка`, user.FirstName, user.PhoneNumber)
@@ -449,7 +449,7 @@ func handleBook(app *App, update *tgbotapi.Update) error {
 	}
 
 	if !registered {
-		return app.sendMessage(update.Message.Chat.ID, `❌ Для записи на прием необходимо зарегистрироваться и указать номер телефона.
+		return app.sendMessage(update.Message.Chat.ID, `❌ Для записи на приём необходимо зарегистрироваться и указать номер телефона.
 
 Пожалуйста, используйте команду /start для регистрации.`)
 	}
@@ -465,15 +465,15 @@ func handleBook(app *App, update *tgbotapi.Update) error {
 		message := fmt.Sprintf(`У вас уже есть активная запись:
 📅 %s
 
-Хотите отменить её и записаться на другое время?`, 
+Хотите отменить её и записаться на другое время?`,
 			activeSlot.StartTime.Format("02.01.2006 15:04"))
 
 		cancelBtn := tgbotapi.NewInlineKeyboardButtonData("❌ Отменить запись", fmt.Sprintf("cancel_%d", activeSlot.ID))
 		keyboard := tgbotapi.NewInlineKeyboardMarkup([]tgbotapi.InlineKeyboardButton{cancelBtn})
-		
+
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, message)
 		msg.ReplyMarkup = keyboard
-		
+
 		_, err = app.bot.Send(msg)
 		return err
 	}
@@ -489,7 +489,7 @@ func handleBook(app *App, update *tgbotapi.Update) error {
 // showBookingDates shows available dates for booking
 func (app *App) showBookingDates(chatID int64) error {
 	dates := GetBookingDates(app.config.ScheduleDays, app.config)
-	
+
 	if len(dates) == 0 {
 		return app.sendMessage(chatID, "Нет доступных дат для записи")
 	}
@@ -498,14 +498,14 @@ func (app *App) showBookingDates(chatID int64) error {
 	for _, date := range dates {
 		dateStr := date.Format("2006-01-02")
 		displayStr := date.Format("02.01 (Mon)")
-		
+
 		// Translate day names to Russian
 		dayName := ""
 		switch date.Weekday() {
 		case time.Monday:
 			dayName = "Пн"
 		case time.Tuesday:
-			dayName = "Вт" 
+			dayName = "Вт"
 		case time.Wednesday:
 			dayName = "Ср"
 		case time.Thursday:
@@ -513,9 +513,9 @@ func (app *App) showBookingDates(chatID int64) error {
 		case time.Friday:
 			dayName = "Пт"
 		}
-		
+
 		displayStr = date.Format("02.01") + " (" + dayName + ")"
-		
+
 		btn := tgbotapi.NewInlineKeyboardButtonData(displayStr, "date_"+dateStr)
 		rows = append(rows, []tgbotapi.InlineKeyboardButton{btn})
 	}
@@ -546,41 +546,41 @@ func (app *App) showSlotsForDate(chatID int64, date time.Time) error {
 				log.Printf("Error getting next day slots: %v", err)
 				return app.sendMessage(chatID, "К сожалению, нет доступных слотов на сегодня")
 			}
-			
+
 			if len(nextSlots) > 0 {
 				nextDateStr := nextWorkday.Format("02.01.2006")
 				message := fmt.Sprintf(`К сожалению, нет доступных слотов на сегодня.
 
 Хотите посмотреть доступные слоты на %s?`, nextDateStr)
-				
+
 				nextDayBtn := tgbotapi.NewInlineKeyboardButtonData(
 					fmt.Sprintf("📅 Показать слоты на %s", nextDateStr),
 					fmt.Sprintf("date_%s", nextWorkday.Format("2006-01-02")),
 				)
 				keyboard := tgbotapi.NewInlineKeyboardMarkup([]tgbotapi.InlineKeyboardButton{nextDayBtn})
-				
+
 				msg := tgbotapi.NewMessage(chatID, message)
 				msg.ReplyMarkup = keyboard
-				
+
 				_, err = app.bot.Send(msg)
 				return err
 			}
 		}
-		
+
 		dateStr := date.Format("02.01.2006")
 		return app.sendMessage(chatID, fmt.Sprintf("К сожалению, нет доступных слотов на %s", dateStr))
 	}
 
 	var rows [][]tgbotapi.InlineKeyboardButton
 	var currentRow []tgbotapi.InlineKeyboardButton
-	
+
 	for i, slot := range slots {
 		timeStr := slot.Format("15:04")
 		slotData := fmt.Sprintf("slot_%s", slot.Format("2006-01-02_15:04"))
-		
+
 		btn := tgbotapi.NewInlineKeyboardButtonData(timeStr, slotData)
 		currentRow = append(currentRow, btn)
-		
+
 		// Add row when we have 3 buttons or it's the last slot
 		if len(currentRow) == 3 || i == len(slots)-1 {
 			rows = append(rows, currentRow)

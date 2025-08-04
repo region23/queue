@@ -15,9 +15,18 @@ help:
 
 # Build the bot
 build:
-	go build -o queue_bot .
+	go build -o queue_bot ./cmd/server
 
-# Run the bot (now loads .env automatically)
+# Test all packages
+test:
+	go test ./...
+
+# Test with coverage  
+test-coverage:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+# Build and run the bot (now loads .env automatically)
 run: build
 	./queue_bot
 

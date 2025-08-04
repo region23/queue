@@ -3,6 +3,7 @@
 ## Storage Interfaces
 
 ### UserRepository
+
 ```go
 type UserRepository interface {
     SaveUser(ctx context.Context, chatID int64, phone, firstName, lastName string) error
@@ -12,6 +13,7 @@ type UserRepository interface {
 ```
 
 ### SlotRepository  
+
 ```go
 type SlotRepository interface {
     CreateSlot(ctx context.Context, slot *Slot) error
@@ -25,6 +27,7 @@ type SlotRepository interface {
 ```
 
 ### Storage (Combined Interface)
+
 ```go
 type Storage interface {
     UserRepository
@@ -36,6 +39,7 @@ type Storage interface {
 ## Scheduler Interfaces
 
 ### NotificationScheduler
+
 ```go
 type NotificationScheduler interface {
     Schedule(ctx context.Context, slot *Slot) error
@@ -46,6 +50,7 @@ type NotificationScheduler interface {
 ```
 
 ### NotificationSender
+
 ```go
 type NotificationSender interface {
     SendNotification(ctx context.Context, chatID int64, message string) error
@@ -55,6 +60,7 @@ type NotificationSender interface {
 ## Bot Service Interface
 
 ### BotService
+
 ```go
 type BotService interface {
     HandleStart(ctx context.Context, chatID int64) error
@@ -67,6 +73,7 @@ type BotService interface {
 ## Configuration Interface
 
 ### Config
+
 ```go
 type Config interface {
     GetTelegramToken() string
@@ -82,6 +89,7 @@ type Config interface {
 ## HTTP Server Interface
 
 ### Server
+
 ```go
 type Server interface {
     Start(ctx context.Context) error
@@ -93,6 +101,7 @@ type Server interface {
 ## Logger Interface
 
 ### Logger
+
 ```go
 type Logger interface {
     Info(msg string, fields ...Field)
@@ -105,6 +114,7 @@ type Logger interface {
 ## Data Models
 
 ### User Model
+
 ```go
 type User struct {
     ID        int64     `json:"id"`
@@ -118,6 +128,7 @@ type User struct {
 ```
 
 ### Slot Model
+
 ```go
 type Slot struct {
     ID         int       `json:"id"`
@@ -134,6 +145,7 @@ type Slot struct {
 ## Error Types
 
 ### Custom Errors
+
 ```go
 type BotError struct {
     Code    string
@@ -183,6 +195,7 @@ main.go
 4. **NotificationSender** - только отправка уведомлений
 
 Это позволяет:
+
 - Легко тестировать каждый компонент отдельно
 - Создавать mock'и для unit тестов
 - Заменять реализации без изменения интерфейсов

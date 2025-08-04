@@ -62,41 +62,50 @@
 ## Интерфейсы между компонентами
 
 ### 1. Config → All Components
+
 - Предоставляет конфигурацию всем компонентам
 - Валидирует настройки при запуске
 
 ### 2. HTTP Server → Bot Service
+
 - Принимает webhook запросы от Telegram
 - Передает обновления в Bot Service
 
 ### 3. Bot Service → Storage
+
 - Сохраняет пользователей и слоты
 - Получает данные для отображения
 
 ### 4. Bot Service → Scheduler
+
 - Планирует уведомления для слотов
 - Отменяет уведомления при изменениях
 
 ### 5. Scheduler → Storage
+
 - Получает информацию о слотах для уведомлений
 - Отмечает слоты как уведомленные
 
 ## Принципы разделения
 
 ### Слой презентации (Presentation Layer)
+
 - `internal/server/` - HTTP сервер и middleware
 - `internal/bot/handlers/` - обработчики Telegram команд
 - `internal/bot/keyboard/` - клавиатуры для пользовательского интерфейса
 
 ### Слой бизнес-логики (Business Logic Layer)
+
 - `internal/bot/service.go` - основная бизнес-логика бота
 - `internal/scheduler/` - логика планирования уведомлений
 
 ### Слой доступа к данным (Data Access Layer)
+
 - `internal/storage/` - интерфейсы и реализации хранилища
 - `internal/storage/models/` - модели данных
 
 ### Слой инфраструктуры (Infrastructure Layer)
+
 - `pkg/logger/` - структурированное логирование  
 - `pkg/errors/` - обработка ошибок
 - `internal/config/` - конфигурация приложения

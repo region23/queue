@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+*.md
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Database files (будет создана в контейнере)
+*.db
+*.db-wal
+*.db-shm
+
+# Build artifacts
+queue_bot
+queue_bot_new
+main
+main_old.go
+
+# Test files
+*_test.go
+tests/
+
+# Environment files (кроме .env.example)
+.env
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Development files
+tbd.md
+Makefile

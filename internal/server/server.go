@@ -9,6 +9,8 @@ import (
 	"telegram_queue_bot/internal/config"
 	"telegram_queue_bot/internal/middleware"
 	"telegram_queue_bot/pkg/logger"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Server представляет HTTP сервер с middleware
@@ -20,6 +22,7 @@ type Server struct {
 	telegramLimiter *middleware.TelegramRateLimiter
 	securityLogger  *SecurityLogger
 	validator       *RequestValidator
+	healthChecker   *HealthChecker
 }
 
 // New создает новый HTTP сервер
@@ -36,6 +39,9 @@ func New(cfg *config.Config, logger logger.Logger) *Server {
 	// Создаем валидатор запросов
 	validator := NewRequestValidator(logger)
 
+	// Создаем health checker
+	healthChecker := NewHealthChecker(nil, "1.0.0") // TODO: передать storage и версию
+
 	server := &Server{
 		config:          cfg,
 		logger:          logger,
@@ -43,6 +49,7 @@ func New(cfg *config.Config, logger logger.Logger) *Server {
 		telegramLimiter: telegramLimiter,
 		securityLogger:  securityLogger,
 		validator:       validator,
+		healthChecker:   healthChecker,
 	}
 
 	// Создаем HTTP сервер с таймаутами
@@ -63,8 +70,11 @@ func (s *Server) setupRoutes() http.Handler {
 	mux := http.NewServeMux()
 
 	// Основные маршруты
-	mux.HandleFunc("/health", s.handleHealth)
+	mux.HandleFunc("/health", s.healthChecker.HealthHandler)
 	mux.HandleFunc("/webhook", s.handleWebhook)
+
+	// Метрики Prometheus
+	mux.Handle("/metrics", promhttp.Handler())
 
 	// Применяем middleware в правильном порядке
 	handler := s.applyMiddleware(mux)
@@ -76,8 +86,11 @@ func (s *Server) setupRoutes() http.Handler {
 func (s *Server) applyMiddleware(handler http.Handler) http.Handler {
 	// Применяем middleware в обратном порядке (последний применяется первым)
 
-	// 8. Основной обработчик
+	// 9. Основной обработчик
 	h := handler
+
+	// 8. Prometheus метрики
+	h = middleware.PrometheusMiddleware(h)
 
 	// 7. Валидация запросов
 	h = s.requestValidationMiddleware(h)
@@ -101,18 +114,6 @@ func (s *Server) applyMiddleware(handler http.Handler) http.Handler {
 	h = s.securityHeadersMiddleware(h)
 
 	return h
-}
-
-// handleHealth обрабатывает health check запросы
-func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"ok","timestamp":"` + time.Now().UTC().Format(time.RFC3339) + `"}`))
 }
 
 // handleWebhook обрабатывает Telegram webhook

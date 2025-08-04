@@ -1,6 +1,7 @@
 # Binaries
 queue_bot
 telegram_queue_bot
+queue_bot_new
 
 # Database
 queue.db

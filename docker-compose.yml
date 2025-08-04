@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # Telegram Queue Bot
+  queue-bot:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: telegram-queue-bot
+    restart: unless-stopped
+    
+    # Переменные окружения
+    environment:
+      - PORT=8080
+      - DB_FILE=/app/data/queue.db
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - WORK_START=${WORK_START:-09:00}
+      - WORK_END=${WORK_END:-18:00}
+      - SLOT_DURATION=${SLOT_DURATION:-30}
+      - SCHEDULE_DAYS=${SCHEDULE_DAYS:-7}
+      - SERVER_TIMEOUT=${SERVER_TIMEOUT:-30}
+    
+    # Переменные из файла
+    env_file:
+      - .env
+    
+    # Порты
+    ports:
+      - "8080:8080"
+    
+    # Тома для персистентности данных
+    volumes:
+      - queue_data:/app/data
+      - ./logs:/app/logs
+    
+    # Ограничения ресурсов
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    
+    # Проверка здоровья
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    
+    # Логирование
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Сети
+    networks:
+      - queue-network
+
+  # Prometheus для мониторинга (опционально)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - queue-network
+    profiles:
+      - monitoring
+
+  # Grafana для визуализации (опционально)  
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - queue-network
+    profiles:
+      - monitoring
+
+# Тома
+volumes:
+  queue_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# Сети
+networks:
+  queue-network:
+    driver: bridge

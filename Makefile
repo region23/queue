@@ -1,8 +1,10 @@
-.PHONY: help build run ngrok webhook clean dev stop delete-webhook env
+.PHONY: help build run ngrok webhook clean dev stop delete-webhook env docker-build docker-run docker-down docker-logs test-coverage monitoring
 
 # Default target
 help:
 	@echo "Available commands:"
+	@echo ""
+	@echo "Development:"
 	@echo "  build          - Build the bot binary"
 	@echo "  run            - Run the bot (loads .env automatically)"
 	@echo "  ngrok          - Start ngrok tunnel"
@@ -12,6 +14,20 @@ help:
 	@echo "  stop           - Stop all running processes (ngrok, bot)"
 	@echo "  clean          - Clean build artifacts"
 	@echo "  env            - Show environment variables from .env"
+	@echo ""
+	@echo "Docker:"
+	@echo "  docker-build   - Build Docker image"
+	@echo "  docker-run     - Run with Docker Compose"
+	@echo "  docker-down    - Stop Docker containers"
+	@echo "  docker-logs    - Show Docker logs"
+	@echo ""
+	@echo "Testing:"
+	@echo "  test           - Run all tests"
+	@echo "  test-coverage  - Run tests with coverage report"
+	@echo ""
+	@echo "Monitoring:"
+	@echo "  monitoring     - Start monitoring stack (Prometheus + Grafana)"
+	@echo "  stop-monitoring - Stop monitoring stack"
 
 # Build the bot
 build:
@@ -88,3 +104,49 @@ env:
 		echo "Error: .env file not found"; \
 		exit 1; \
 	fi
+
+# Docker commands
+docker-build:
+	docker build -t telegram-queue-bot .
+
+docker-run:
+	docker-compose up -d
+
+docker-down:
+	docker-compose down
+
+docker-logs:
+	docker-compose logs -f queue-bot
+
+# Monitoring
+monitoring:
+	docker-compose --profile monitoring up -d
+	@echo "Monitoring started:"
+	@echo "  Prometheus: http://localhost:9090"
+	@echo "  Grafana: http://localhost:3000 (admin/admin)"
+
+stop-monitoring:
+	docker-compose --profile monitoring down
+
+# Production deployment
+deploy: docker-build
+	docker-compose up -d --no-deps queue-bot
+	@echo "Deployed to production"
+
+# Health check
+health:
+	@curl -s http://localhost:8080/health | jq '.' || echo "Health check failed"
+
+# Metrics check
+metrics:
+	@curl -s http://localhost:8080/metrics | head -20
+
+# Database backup
+backup:
+	@timestamp=$$(date +%Y%m%d_%H%M%S) && \
+	cp queue.db "backups/queue_backup_$$timestamp.db" && \
+	echo "Database backed up to backups/queue_backup_$$timestamp.db"
+
+# Create backup directory
+backup-dir:
+	mkdir -p backups

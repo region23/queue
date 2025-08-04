@@ -1,4 +1,4 @@
-# Telegram Queue Bot
+# Telegram-бот выполняющий функции автомата электронной очереди :)
 
 Простой бот для записи в очередь с уведомлениями.
 
@@ -84,7 +84,56 @@
 
 ## Структура проекта
 
-- `main.go` - Основной код бота
-- `Makefile` - Команды для сборки и запуска
-- `.env` - Файл с переменными окружения
-- `queue.db` - База данных SQLite (создается автоматически)
+```text
+telegram_queue_bot/
+├── cmd/
+│   └── server/
+│       └── main.go           # Точка входа приложения
+├── internal/
+│   ├── bot/
+│   │   ├── service/          # Сервисный слой бота
+│   │   │   └── service.go
+│   │   ├── handlers/         # Обработчики сообщений
+│   │   │   ├── start.go      # Обработчик /start
+│   │   │   ├── contact.go    # Обработчик контактов
+│   │   │   ├── callback.go   # Обработчик callback'ов
+│   │   │   └── default.go    # Обработчик по умолчанию
+│   │   ├── keyboard/         # Клавиатуры
+│   │   │   └── keyboards.go
+│   │   └── dispatcher/       # Диспетчер обновлений
+│   │       └── dispatcher.go
+│   ├── config/               # Конфигурация
+│   │   └── config.go
+│   ├── storage/              # Хранилище данных
+│   │   ├── interfaces.go     # Интерфейсы
+│   │   ├── models/           # Модели данных
+│   │   │   └── models.go
+│   │   └── sqlite/           # SQLite реализация
+│   │       └── sqlite.go
+│   ├── scheduler/            # Планировщик уведомлений
+│   │   ├── interfaces.go
+│   │   └── memory/
+│   │       └── scheduler.go
+│   ├── server/               # HTTP сервер
+│   │   ├── server.go
+│   │   ├── middleware.go
+│   │   └── ...
+│   ├── middleware/           # Middleware компоненты
+│   │   └── ratelimit.go
+│   └── validation/           # Валидация
+│       └── validation.go
+├── pkg/
+│   ├── logger/               # Логирование
+│   │   └── logger.go
+│   └── errors/               # Обработка ошибок
+│       └── errors.go
+├── tests/                    # Тесты
+│   ├── testutils/
+│   ├── unit/
+│   └── integration/
+├── docs/                     # Документация
+├── Makefile                  # Команды для сборки и запуска
+├── .env                      # Файл с переменными окружения
+├── queue.db                  # База данных SQLite (создается автоматически)
+└── main_old.go              # Старая монолитная версия (резервная копия)
+```

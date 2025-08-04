@@ -1,6 +1,5 @@
 ---
-description: 'Full Codebase Audit Prompt.'
-tools: ['changes', 'codebase', 'fetch', 'findTestFiles', 'githubRepo', 'openSimpleBrowser', 'problems', 'runTasks', 'runTests', 'search', 'searchResults', 'testFailure', 'usages']
+applyTo: '**'
 ---
 Are there redundant, deprecated, or legacy methods that remain in this codebase? Is there duplication or scattered logic? Is there confusion, mismatches, or misconfiguration? Overengineering, dead code, or unnecessary features? Is the system completely streamlined and elegant, with clear separation of concerns, and no security vulnerabilities? 
 

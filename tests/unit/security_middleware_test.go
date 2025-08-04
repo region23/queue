@@ -27,7 +27,7 @@ func TestSecurityMiddleware(t *testing.T) {
 	}
 
 	log := logger.New(logger.LevelInfo)
-	srv := server.New(cfg, *log)
+	srv := server.New(cfg, *log, nil, nil)
 
 	tests := []struct {
 		name           string
@@ -132,7 +132,7 @@ func TestRateLimiting(t *testing.T) {
 	}
 
 	log := logger.New(logger.LevelWarn)
-	srv := server.New(cfg, *log)
+	srv := server.New(cfg, *log, nil, nil)
 
 	if srv == nil {
 		t.Error("Server should be created")
@@ -154,7 +154,7 @@ func TestSecurityHeaders(t *testing.T) {
 	}
 
 	log := logger.New(logger.LevelWarn)
-	srv := server.New(cfg, *log)
+	srv := server.New(cfg, *log, nil, nil)
 
 	if srv == nil {
 		t.Error("Server should be created")
@@ -190,7 +190,7 @@ func TestRequestValidation(t *testing.T) {
 	}
 
 	log := logger.New(logger.LevelWarn)
-	srv := server.New(cfg, *log)
+	srv := server.New(cfg, *log, nil, nil)
 
 	if srv == nil {
 		t.Error("Server should be created")
@@ -248,7 +248,7 @@ func TestGracefulShutdown(t *testing.T) {
 	}
 
 	log := logger.New(logger.LevelWarn)
-	srv := server.New(cfg, *log)
+	srv := server.New(cfg, *log, nil, nil)
 
 	// Тестируем graceful shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)

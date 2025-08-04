@@ -2,14 +2,18 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"telegram_queue_bot/internal/bot/dispatcher"
 	"telegram_queue_bot/internal/config"
 	"telegram_queue_bot/internal/middleware"
 	"telegram_queue_bot/pkg/logger"
 
+	tgbot "github.com/go-telegram/bot"
+	tgmodels "github.com/go-telegram/bot/models"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -21,12 +25,13 @@ type Server struct {
 	rateLimiter     *middleware.RateLimiter
 	telegramLimiter *middleware.TelegramRateLimiter
 	securityLogger  *SecurityLogger
-	validator       *RequestValidator
 	healthChecker   *HealthChecker
+	dispatcher      *dispatcher.Dispatcher
+	telegramBot     *tgbot.Bot
 }
 
 // New создает новый HTTP сервер
-func New(cfg *config.Config, logger logger.Logger) *Server {
+func New(cfg *config.Config, logger logger.Logger, dispatcher *dispatcher.Dispatcher, telegramBot *tgbot.Bot) *Server {
 	// Создаем rate limiter для HTTP запросов
 	rateLimiter := middleware.NewRateLimiter(100, time.Minute, logger)
 
@@ -35,9 +40,6 @@ func New(cfg *config.Config, logger logger.Logger) *Server {
 
 	// Создаем security logger
 	securityLogger := NewSecurityLogger(logger)
-
-	// Создаем валидатор запросов
-	validator := NewRequestValidator(logger)
 
 	// Создаем health checker
 	healthChecker := NewHealthChecker(nil, "1.0.0") // TODO: передать storage и версию
@@ -48,8 +50,9 @@ func New(cfg *config.Config, logger logger.Logger) *Server {
 		rateLimiter:     rateLimiter,
 		telegramLimiter: telegramLimiter,
 		securityLogger:  securityLogger,
-		validator:       validator,
 		healthChecker:   healthChecker,
+		dispatcher:      dispatcher,
+		telegramBot:     telegramBot,
 	}
 
 	// Создаем HTTP сервер с таймаутами
@@ -86,20 +89,14 @@ func (s *Server) setupRoutes() http.Handler {
 func (s *Server) applyMiddleware(handler http.Handler) http.Handler {
 	// Применяем middleware в обратном порядке (последний применяется первым)
 
-	// 9. Основной обработчик
+	// 7. Основной обработчик
 	h := handler
 
-	// 8. Prometheus метрики
+	// 6. Prometheus метрики
 	h = middleware.PrometheusMiddleware(h)
 
-	// 7. Валидация запросов
-	h = s.requestValidationMiddleware(h)
-
-	// 6. User rate limiting для Telegram
-	h = s.userRateLimitMiddleware(s.telegramLimiter)(h)
-
-	// 5. Telegram authentication
-	h = s.telegramAuthMiddleware(h)
+	// 5. User rate limiting для Telegram
+	h = middleware.TelegramRateLimitMiddleware(s.telegramLimiter)(h)
 
 	// 4. Rate limiting
 	h = middleware.HTTPRateLimitMiddleware(s.rateLimiter)(h)
@@ -128,20 +125,27 @@ func (s *Server) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Валидируем webhook запрос
-	update, err := s.validator.ValidateWebhookRequest(r)
-	if err != nil {
-		s.securityLogger.LogValidationError(r, "webhook_validation", r.URL.Path, err.Error())
+	// Парсим обновление от Telegram используя библиотеку
+	var update tgmodels.Update
+	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
+		s.logger.Error("Failed to decode Telegram update",
+			logger.Field{Key: "error", Value: err.Error()},
+		)
+		s.securityLogger.LogValidationError(r, "webhook_validation", r.URL.Path, "Failed to decode JSON: "+err.Error())
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 
-	// Логируем успешную обработку
-	s.securityLogger.LogTelegramUpdate(update, time.Since(start))
+	// Обрабатываем обновление через dispatcher
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
 
-	// TODO: Интеграция с обработчиком Telegram бота
+	s.dispatcher.HandleUpdate(ctx, s.telegramBot, &update)
+
+	// Логируем успешную обработку
+	s.securityLogger.LogTelegramUpdate(&update, time.Since(start))
 	s.logger.Info("Webhook processed successfully",
-		logger.Field{Key: "update_id", Value: update.UpdateID},
+		logger.Field{Key: "update_id", Value: update.ID},
 		logger.Field{Key: "processing_time_ms", Value: time.Since(start).Milliseconds()},
 	)
 

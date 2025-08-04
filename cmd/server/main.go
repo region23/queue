@@ -2,14 +2,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"telegram_queue_bot/internal/bot/dispatcher"
 	"telegram_queue_bot/internal/bot/service"
@@ -21,12 +19,20 @@ import (
 	"telegram_queue_bot/pkg/logger"
 
 	tgbot "github.com/go-telegram/bot"
-	tgmodels "github.com/go-telegram/bot/models"
+	"github.com/joho/godotenv"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Printf("Starting Telegram Queue Bot...")
+
+	// Загружаем переменные окружения из .env файла
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: .env file not found or could not be loaded: %v", err)
+		log.Printf("Trying to use system environment variables...")
+	} else {
+		log.Printf(".env file loaded successfully")
+	}
 
 	// Загружаем конфигурацию
 	cfg, err := config.Load()
@@ -85,13 +91,8 @@ func main() {
 		logger.Info("Pending notifications rescheduled successfully")
 	}
 
-	// Создаем HTTP сервер
-	srv := server.New(cfg, *logger)
-
-	// Настраиваем обработчик webhook
-	http.HandleFunc("/webhook", func(w http.ResponseWriter, r *http.Request) {
-		webhookHandler(w, r, updateDispatcher, telegramBot)
-	})
+	// Создаем HTTP сервер с интегрированным bot dispatcher
+	srv := server.New(cfg, *logger, updateDispatcher, telegramBot)
 
 	// Настраиваем graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -136,30 +137,6 @@ func setupWebhook(bot *tgbot.Bot, webhookURL string) error {
 
 	log.Printf("Webhook set to %s", webhookURL)
 	return nil
-}
-
-// webhookHandler обрабатывает входящие webhook запросы от Telegram
-func webhookHandler(w http.ResponseWriter, r *http.Request, dispatcher *dispatcher.Dispatcher, bot *tgbot.Bot) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	var update tgmodels.Update
-	if err := json.NewDecoder(r.Body).Decode(&update); err != nil {
-		log.Printf("Failed to decode update: %v", err)
-		http.Error(w, "Bad request", http.StatusBadRequest)
-		return
-	}
-
-	// Обрабатываем обновление
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
-	defer cancel()
-
-	dispatcher.HandleUpdate(ctx, bot, &update)
-
-	// Отвечаем Telegram что запрос обработан
-	w.WriteHeader(http.StatusOK)
 }
 
 // TelegramNotificationSender реализует интерфейс NotificationSender для отправки уведомлений через Telegram

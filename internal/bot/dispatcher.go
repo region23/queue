@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"telegram_queue_bot/internal/bot/handlers"
+	"telegram_queue_bot/internal/bot/service"
 
 	tgbot "github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -19,7 +20,7 @@ type Dispatcher struct {
 }
 
 // NewDispatcher создает новый диспетчер обновлений
-func NewDispatcher(service *Service) *Dispatcher {
+func NewDispatcher(service *service.Service) *Dispatcher {
 	return &Dispatcher{
 		startHandler:    handlers.NewStartHandler(service),
 		contactHandler:  handlers.NewContactHandler(service),

@@ -177,6 +177,10 @@ func (s *SQLiteStorage) GetAvailableSlots(ctx context.Context, date string) ([]*
 	defer rows.Close()
 
 	var slots []*models.Slot
+	now := time.Now()
+	today := now.Format("2006-01-02")
+	currentTime := now.Format("15:04")
+
 	for rows.Next() {
 		slot := &models.Slot{}
 		err := rows.Scan(
@@ -186,6 +190,12 @@ func (s *SQLiteStorage) GetAvailableSlots(ctx context.Context, date string) ([]*
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan slot: %w", err)
 		}
+
+		// Для сегодняшней даты показываем только слоты, которые еще не начались
+		if date == today && slot.StartTime <= currentTime {
+			continue
+		}
+
 		slots = append(slots, slot)
 	}
 

@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"telegram_queue_bot/pkg/logger"
+
+	tgmodels "github.com/go-telegram/bot/models"
 )
 
 // SecurityLogger логирует события безопасности
@@ -91,29 +93,25 @@ func (sl *SecurityLogger) LogBlockedRequest(r *http.Request, reason string, acti
 }
 
 // LogTelegramUpdate логирует обработку Telegram update
-func (sl *SecurityLogger) LogTelegramUpdate(update *TelegramUpdate, processingTime time.Duration) {
+func (sl *SecurityLogger) LogTelegramUpdate(update *tgmodels.Update, processingTime time.Duration) {
 	var chatID int64
 	var userID int64
 	var updateType string
 
 	if update.Message != nil {
 		updateType = "message"
-		if update.Message.Chat != nil {
-			chatID = update.Message.Chat.ID
-		}
+		chatID = update.Message.Chat.ID
 		if update.Message.From != nil {
 			userID = update.Message.From.ID
 		}
 	} else if update.CallbackQuery != nil {
 		updateType = "callback_query"
-		if update.CallbackQuery.From != nil {
-			userID = update.CallbackQuery.From.ID
-			chatID = userID // Для callback_query chat_id равен user_id
-		}
+		userID = update.CallbackQuery.From.ID
+		chatID = userID // Для callback_query chat_id равен user_id
 	}
 
 	sl.logger.Info("Telegram update processed",
-		logger.Field{Key: "update_id", Value: update.UpdateID},
+		logger.Field{Key: "update_id", Value: update.ID},
 		logger.Field{Key: "type", Value: updateType},
 		logger.Field{Key: "chat_id", Value: chatID},
 		logger.Field{Key: "user_id", Value: userID},

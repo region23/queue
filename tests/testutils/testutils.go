@@ -67,7 +67,9 @@ func SetupTestConfig() *config.Config {
 func SetupTestServer(t *testing.T) (*server.Server, *config.Config) {
 	cfg := SetupTestConfig()
 	log := SetupTestLogger()
-	srv := server.New(cfg, *log)
+
+	// Для тестов создаем пустые заглушки
+	srv := server.New(cfg, *log, nil, nil)
 
 	return srv, cfg
 }

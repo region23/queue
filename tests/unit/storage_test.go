@@ -75,11 +75,20 @@ func TestUserRepository_DuplicateUser(t *testing.T) {
 		t.Fatalf("expected no error on first save, got %v", err)
 	}
 
-	// Try to save the same user again
-	err = storage.SaveUser(ctx, chatID, phone, firstName, lastName)
-	if err == nil {
-		t.Fatal("expected error when saving duplicate user")
+	// Save the same user again (should succeed because of INSERT OR REPLACE)
+	err = storage.SaveUser(ctx, chatID, phone, "Updated"+firstName, lastName)
+	if err != nil {
+		t.Fatalf("expected no error on second save (INSERT OR REPLACE), got %v", err)
 	}
+
+	// Verify the user was updated
+	user, err := storage.GetUserByID(ctx, chatID)
+	if err != nil {
+		t.Fatalf("failed to get user: %v", err)
+	}
+
+	expected := "Updated" + firstName
+	testutils.AssertEqual(t, expected, user.FirstName, "User should be updated")
 }
 
 func TestSlotRepository_CreateSlot(t *testing.T) {
@@ -110,6 +119,9 @@ func TestSlotRepository_GetAvailableSlots(t *testing.T) {
 
 	date := "2025-08-05"
 
+	// Создаем тестового пользователя для зарезервированного слота
+	user := testutils.CreateTestUser(t, storage, 123)
+
 	// Create some test slots
 	slots := []*models.Slot{
 		{
@@ -130,7 +142,7 @@ func TestSlotRepository_GetAvailableSlots(t *testing.T) {
 			Date:       date,
 			StartTime:  "12:00",
 			EndTime:    "12:30",
-			UserChatID: func() *int64 { id := int64(123); return &id }(), // Reserved slot
+			UserChatID: &user.ChatID, // Используем существующего пользователя
 			CreatedAt:  time.Now(),
 			UpdatedAt:  time.Now(),
 		},

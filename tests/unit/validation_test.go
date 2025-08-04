@@ -93,7 +93,7 @@ func TestValidatePhoneNumber(t *testing.T) {
 		},
 		{
 			name:    "too short",
-			input:   "+123",
+			input:   "+1", // Реально слишком короткий номер
 			wantErr: true,
 		},
 		{

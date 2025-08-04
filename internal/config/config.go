@@ -17,8 +17,9 @@ type Config struct {
 
 // TelegramConfig содержит настройки Telegram бота
 type TelegramConfig struct {
-	Token      string `json:"token"`
-	WebhookURL string `json:"webhook_url"`
+	Token       string `json:"token"`
+	WebhookURL  string `json:"webhook_url"`
+	SecretToken string `json:"secret_token"`
 }
 
 // ServerConfig содержит настройки HTTP сервера
@@ -50,8 +51,9 @@ type ScheduleConfig struct {
 func Load() (*Config, error) {
 	cfg := &Config{
 		Telegram: TelegramConfig{
-			Token:      os.Getenv("TELEGRAM_TOKEN"),
-			WebhookURL: os.Getenv("WEBHOOK_URL"),
+			Token:       os.Getenv("TELEGRAM_TOKEN"),
+			WebhookURL:  os.Getenv("WEBHOOK_URL"),
+			SecretToken: os.Getenv("TELEGRAM_SECRET_TOKEN"),
 		},
 		Server: ServerConfig{
 			Port:         getEnv("PORT", "8080"),

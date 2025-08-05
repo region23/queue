@@ -11,6 +11,10 @@ services:
       - WORK_START=09:00
       - WORK_END=18:00
       - SLOT_DURATION=30
+      - SCHEDULE_DAYS=7
+      - SKIP_WEEKEND=1
+      - RATE_LIMIT=60
+      - SLOTS_PER_ROW=3
       - ADMIN_IDS=${ADMIN_IDS}
     volumes:
       - ./data:/data

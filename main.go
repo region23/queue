@@ -61,8 +61,8 @@ func main() {
 		log.Printf("Warning: failed to register bot commands: %v", err)
 	}
 
-	// Generate initial slots for next 30 days
-	if err := GenerateSlots(db, config, time.Now(), time.Now().AddDate(0, 0, 30)); err != nil {
+	// Generate initial slots for the configured schedule period
+	if err := GenerateSlots(db, config, time.Now(), time.Now().AddDate(0, 0, config.ScheduleDays)); err != nil {
 		log.Printf("Warning: failed to generate slots: %v", err)
 	}
 
@@ -74,7 +74,7 @@ func main() {
 	}
 
 	// Create rate limiter
-	rateLimiter := NewRateLimiter(60, time.Minute) // 60 requests per minute
+	rateLimiter := NewRateLimiter(config.RateLimit, time.Minute)
 
 	// Start HTTP server with middleware
 	http.HandleFunc("/webhook/"+bot.Token, LoggingMiddleware(RateLimitMiddleware(rateLimiter)(app.handleWebhook)))
@@ -250,12 +250,6 @@ func (app *App) handleCallbackQuery(callback *tgbotapi.CallbackQuery) error {
 		}
 		dateTimeStr := parts[1] + "_" + parts[2]
 		return app.handleSlotCallback(callback, dateTimeStr)
-	case "book":
-		slotID, err := strconv.Atoi(parts[1])
-		if err != nil {
-			return nil
-		}
-		return app.handleBookCallback(callback, slotID)
 	case "cancel":
 		slotID, err := strconv.Atoi(parts[1])
 		if err != nil {
@@ -309,26 +303,6 @@ func (app *App) handleSlotCallback(callback *tgbotapi.CallbackQuery, dateTimeStr
 
 	message := fmt.Sprintf("✅ Вы успешно записались на приём:\n📅 %s", slotTime.Format("02.01.2006 15:04"))
 	return app.sendMessage(callback.Message.Chat.ID, message)
-}
-
-// handleBookCallback handles slot booking
-func (app *App) handleBookCallback(callback *tgbotapi.CallbackQuery, slotID int) error {
-	userID := callback.From.ID
-	username := callback.From.UserName
-	if username == "" {
-		username = callback.From.FirstName
-	}
-
-	err := BookSlot(app.db, slotID, userID, username)
-	if err != nil {
-		return app.sendMessage(callback.Message.Chat.ID, "Не удалось забронировать слот. Возможно, он уже занят.")
-	}
-
-	// Delete the keyboard message
-	deleteMsg := tgbotapi.NewDeleteMessage(callback.Message.Chat.ID, callback.Message.MessageID)
-	app.bot.Send(deleteMsg)
-
-	return app.sendMessage(callback.Message.Chat.ID, "✅ Вы успешно записались на приём!")
 }
 
 // handleCancelCallback handles slot cancellation
@@ -497,7 +471,6 @@ func (app *App) showBookingDates(chatID int64) error {
 	var rows [][]tgbotapi.InlineKeyboardButton
 	for _, date := range dates {
 		dateStr := date.Format("2006-01-02")
-		displayStr := date.Format("02.01 (Mon)")
 
 		// Translate day names to Russian
 		dayName := ""
@@ -514,7 +487,7 @@ func (app *App) showBookingDates(chatID int64) error {
 			dayName = "Пт"
 		}
 
-		displayStr = date.Format("02.01") + " (" + dayName + ")"
+		displayStr := date.Format("02.01") + " (" + dayName + ")"
 
 		btn := tgbotapi.NewInlineKeyboardButtonData(displayStr, "date_"+dateStr)
 		rows = append(rows, []tgbotapi.InlineKeyboardButton{btn})
@@ -581,8 +554,8 @@ func (app *App) showSlotsForDate(chatID int64, date time.Time) error {
 		btn := tgbotapi.NewInlineKeyboardButtonData(timeStr, slotData)
 		currentRow = append(currentRow, btn)
 
-		// Add row when we have 3 buttons or it's the last slot
-		if len(currentRow) == 3 || i == len(slots)-1 {
+		// Add row when we have configured number of buttons or it's the last slot
+		if len(currentRow) == app.config.SlotsPerRow || i == len(slots)-1 {
 			rows = append(rows, currentRow)
 			currentRow = []tgbotapi.InlineKeyboardButton{}
 		}

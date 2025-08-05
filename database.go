@@ -78,34 +78,6 @@ func InitDB(dbFile string) (*sql.DB, error) {
 	return db, nil
 }
 
-// GetAvailableSlots returns available slots between dates
-func GetAvailableSlots(db *sql.DB, from, to time.Time) ([]Slot, error) {
-	query := `
-		SELECT id, start_time, end_time 
-		FROM slots 
-		WHERE start_time >= ? AND start_time <= ? AND user_id IS NULL
-		ORDER BY start_time
-		LIMIT 10
-	`
-
-	rows, err := db.Query(query, from, to)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var slots []Slot
-	for rows.Next() {
-		var slot Slot
-		if err := rows.Scan(&slot.ID, &slot.StartTime, &slot.EndTime); err != nil {
-			return nil, err
-		}
-		slots = append(slots, slot)
-	}
-
-	return slots, nil
-}
-
 // GetUserSlots returns slots for a specific user
 func GetUserSlots(db *sql.DB, userID int64) ([]Slot, error) {
 	query := `
@@ -133,31 +105,6 @@ func GetUserSlots(db *sql.DB, userID int64) ([]Slot, error) {
 	}
 
 	return slots, nil
-}
-
-// BookSlot books a slot for a user
-func BookSlot(db *sql.DB, slotID int, userID int64, username string) error {
-	query := `
-		UPDATE slots 
-		SET user_id = ?, username = ?
-		WHERE id = ? AND user_id IS NULL
-	`
-
-	result, err := db.Exec(query, userID, username, slotID)
-	if err != nil {
-		return err
-	}
-
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return fmt.Errorf("slot already booked or not found")
-	}
-
-	return nil
 }
 
 // CancelSlot cancels a user's slot
@@ -204,8 +151,8 @@ func GetStatistics(db *sql.DB) (*Stats, error) {
 	// Available slots
 	stats.AvailableSlots = stats.TotalSlots - stats.BookedSlots
 
-	// Total users
-	err = db.QueryRow("SELECT COUNT(DISTINCT user_id) FROM slots WHERE user_id IS NOT NULL").Scan(&stats.TotalUsers)
+	// Total users (registered users, not just those who booked)
+	err = db.QueryRow("SELECT COUNT(*) FROM users WHERE is_active = 1").Scan(&stats.TotalUsers)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +185,7 @@ func GenerateSlots(db *sql.DB, config *Config, from, to time.Time) error {
 
 		for slot := start; slot.Before(end); slot = slot.Add(time.Duration(config.SlotDuration) * time.Minute) {
 			slotEnd := slot.Add(time.Duration(config.SlotDuration) * time.Minute)
-			
+
 			// Check if slot already exists
 			var exists bool
 			err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM slots WHERE start_time = ?)", slot).Scan(&exists)
@@ -272,7 +219,7 @@ func GetUserByTelegramID(db *sql.DB, telegramID int64) (*User, error) {
 	var lastName, username, phoneNumber sql.NullString
 
 	err := db.QueryRow(query, telegramID).Scan(
-		&user.ID, &user.TelegramID, &user.FirstName, &lastName, 
+		&user.ID, &user.TelegramID, &user.FirstName, &lastName,
 		&username, &phoneNumber, &user.CreatedAt, &user.IsActive,
 	)
 
@@ -384,7 +331,7 @@ func IsUserRegistered(db *sql.DB, telegramID int64) (bool, error) {
 func GetBookingDates(scheduleDays int, config *Config) []time.Time {
 	var dates []time.Time
 	today := time.Now()
-	
+
 	for i := 0; i < scheduleDays; i++ {
 		date := today.AddDate(0, 0, i)
 		// Skip weekends only if SKIP_WEEKEND is enabled
@@ -392,14 +339,14 @@ func GetBookingDates(scheduleDays int, config *Config) []time.Time {
 			dates = append(dates, date)
 		}
 	}
-	
+
 	return dates
 }
 
 // GenerateSlotsForDate creates time slots for a specific date based on config
 func GenerateSlotsForDate(date time.Time, config *Config) []time.Time {
 	var slots []time.Time
-	
+
 	// Parse work hours
 	workStart, err := time.Parse("15:04", config.WorkStart)
 	if err != nil {
@@ -409,28 +356,28 @@ func GenerateSlotsForDate(date time.Time, config *Config) []time.Time {
 	if err != nil {
 		return slots
 	}
-	
+
 	// Create slots for the day
 	start := time.Date(date.Year(), date.Month(), date.Day(), workStart.Hour(), workStart.Minute(), 0, 0, date.Location())
 	end := time.Date(date.Year(), date.Month(), date.Day(), workEnd.Hour(), workEnd.Minute(), 0, 0, date.Location())
-	
+
 	for slot := start; slot.Before(end); slot = slot.Add(time.Duration(config.SlotDuration) * time.Minute) {
 		slots = append(slots, slot)
 	}
-	
+
 	return slots
 }
 
 // FilterFutureSlots removes past slots from the list
 func FilterFutureSlots(slots []time.Time, now time.Time) []time.Time {
 	var futureSlots []time.Time
-	
+
 	for _, slot := range slots {
 		if slot.After(now) {
 			futureSlots = append(futureSlots, slot)
 		}
 	}
-	
+
 	return futureSlots
 }
 
@@ -438,26 +385,26 @@ func FilterFutureSlots(slots []time.Time, now time.Time) []time.Time {
 func GetAvailableSlotsForDate(db *sql.DB, date time.Time, config *Config) ([]time.Time, error) {
 	// Generate all possible slots for the date
 	allSlots := GenerateSlotsForDate(date, config)
-	
+
 	// Filter future slots if it's today
 	now := time.Now()
 	if date.Format("2006-01-02") == now.Format("2006-01-02") {
 		allSlots = FilterFutureSlots(allSlots, now)
 	}
-	
+
 	// Get booked slots from database
 	query := `
 		SELECT start_time 
 		FROM slots 
 		WHERE DATE(start_time) = DATE(?) AND user_id IS NOT NULL
 	`
-	
+
 	rows, err := db.Query(query, date)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	
+
 	bookedSlots := make(map[string]bool)
 	for rows.Next() {
 		var bookedTime time.Time
@@ -466,7 +413,7 @@ func GetAvailableSlotsForDate(db *sql.DB, date time.Time, config *Config) ([]tim
 		}
 		bookedSlots[bookedTime.Format("15:04")] = true
 	}
-	
+
 	// Filter out booked slots
 	var availableSlots []time.Time
 	for _, slot := range allSlots {
@@ -474,7 +421,7 @@ func GetAvailableSlotsForDate(db *sql.DB, date time.Time, config *Config) ([]tim
 			availableSlots = append(availableSlots, slot)
 		}
 	}
-	
+
 	return availableSlots, nil
 }
 
@@ -502,7 +449,7 @@ func GetUserActiveSlot(db *sql.DB, userID int64) (*Slot, error) {
 
 	slot.UserID.Int64 = userID
 	slot.UserID.Valid = true
-	
+
 	return &slot, nil
 }
 
@@ -516,42 +463,42 @@ func BookTimeSlot(db *sql.DB, slotTime time.Time, userID int64, username string,
 	if activeSlot != nil {
 		return fmt.Errorf("пользователь уже имеет активную запись на %s", activeSlot.StartTime.Format("02.01.2006 15:04"))
 	}
-	
+
 	// Calculate end time
 	endTime := slotTime.Add(time.Duration(config.SlotDuration) * time.Minute)
-	
+
 	// First try to update existing empty slot
 	updateQuery := `
 		UPDATE slots 
 		SET user_id = ?, username = ?
 		WHERE start_time = ? AND user_id IS NULL
 	`
-	
+
 	result, err := db.Exec(updateQuery, userID, username, slotTime)
 	if err != nil {
 		return err
 	}
-	
+
 	affected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	
+
 	if affected > 0 {
 		return nil // Successfully booked existing slot
 	}
-	
+
 	// If no existing slot was updated, try to create new one
 	insertQuery := `
 		INSERT INTO slots (start_time, end_time, user_id, username)
 		VALUES (?, ?, ?, ?)
 	`
-	
+
 	_, err = db.Exec(insertQuery, slotTime, endTime, userID, username)
 	if err != nil {
 		return fmt.Errorf("слот уже забронирован или произошла ошибка")
 	}
-	
+
 	return nil
 }
 
@@ -563,13 +510,13 @@ func IsWeekend(date time.Time) bool {
 // GetNextAvailableWorkday finds the next available day based on SKIP_WEEKEND config
 func GetNextAvailableWorkday(startDate time.Time, config *Config) time.Time {
 	nextDay := startDate.AddDate(0, 0, 1)
-	
+
 	// If skip weekend is enabled, find next workday
 	if config.SkipWeekend {
 		for IsWeekend(nextDay) {
 			nextDay = nextDay.AddDate(0, 0, 1)
 		}
 	}
-	
+
 	return nextDay
 }

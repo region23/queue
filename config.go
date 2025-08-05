@@ -22,6 +22,8 @@ type Config struct {
 	ScheduleDays  int
 	SkipWeekend   bool
 	AdminIDs      []int64
+	RateLimit     int // Requests per minute
+	SlotsPerRow   int // Number of time slot buttons per row
 }
 
 // LoadConfig loads configuration from environment variables and .env file
@@ -32,7 +34,7 @@ func LoadConfig() (*Config, error) {
 	} else {
 		log.Println("Loaded environment variables from .env file")
 	}
-	
+
 	config := &Config{
 		TelegramToken: os.Getenv("TELEGRAM_TOKEN"),
 		WebhookURL:    os.Getenv("WEBHOOK_URL"),
@@ -43,6 +45,8 @@ func LoadConfig() (*Config, error) {
 		SlotDuration:  getEnvIntOrDefault("SLOT_DURATION", 30),
 		ScheduleDays:  getEnvIntOrDefault("SCHEDULE_DAYS", 1),
 		SkipWeekend:   getEnvBoolOrDefault("SKIP_WEEKEND", true),
+		RateLimit:     getEnvIntOrDefault("RATE_LIMIT", 60),
+		SlotsPerRow:   getEnvIntOrDefault("SLOTS_PER_ROW", 3),
 	}
 
 	// Parse admin IDs

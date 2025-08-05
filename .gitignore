@@ -3,6 +3,9 @@ bin/
 bot
 *.exe
 
+queue_bot
+queue
+
 # Database
 *.db
 *.db-journal
